@@ -48,21 +48,68 @@ namespace FileSystem.Services
             await _unitOfWork.File.AddAsync(file);
 
             await _unitOfWork.CommitAsync();
+            IEnumerable<File> files;
+            files = await _unitOfWork.File.GetAllFileTreeAsync(null);
 
-            return file;
+            createFolder(file, files);
+
+            
+
+
+                return file;
         }
 
         public async Task<bool> DeleteFile(int id)
         {
+
             var File =  _unitOfWork.File.GetByIdAsync(id).Result;
+
+          
+
             _unitOfWork.File.Remove(File);
             await _unitOfWork.CommitAsync();
+
+           
             return true;
         }
 
-       
+        public async Task<bool> createFolder(File file, IEnumerable<File> files)
+        {
+            string folderName = @"C:\Files";
+
+            string x = file.Level.ToString().Substring(1, file.Level.ToString().Length - 2);
+           
+      
+            
+
+            string [] xx = x.Split('/');
+
+            string name = "";
+            string level = "";
+            foreach (var item in xx)
+            {
+                level = level + "/" + item ;
+                   name = name + files.Where(a => a.Level.ToString() == level+"/").FirstOrDefault()?.English+"\\";
+
+            }
+
+            folderName= folderName+ "\\"+name;
+
+            string pathString = folderName;//System.IO.Path.Combine(folderName, file.English);
+            System.IO.Directory.CreateDirectory(pathString);
+            string pathString2 = $@"C:\Files\{file.English}";
+            foreach (var item in file.Attachments)
+            {
+                using var writer = new  System.IO.BinaryWriter(System.IO.File.OpenWrite(System.IO.Path.Combine(pathString, item.Name)));
+                writer.Write(item.Data);
+            }
+            return true;
+        }
 
 
+
+
+      
 
         public async Task<IEnumerable<File>> GetAllFileTree(int? ParentId)
         {
